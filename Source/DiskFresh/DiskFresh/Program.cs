@@ -9,11 +9,11 @@ namespace DiskFresh
     {
         static void Main(string[] args)
         {
-            int fileDescriptor;
-            string fileName;
+            string diskName;
+
             if (args.Length > 0)
             {
-                fileName = args[0];
+                diskName = args[0];
             }
             else
             {
@@ -21,66 +21,57 @@ namespace DiskFresh
                 return;
             }
 
+            var disk = new DiskAccess(diskName);
+
             ulong blockSize = 512; // this will normally be 512 in Linux (maybe allow setting it differently later?)
             ulong clusterSize = 8; // number of blocks to read/write (maybe allow settings via command line?)
             ulong bufferSize = clusterSize * blockSize;
+
             var buffer = new byte[bufferSize];
 
-            Console.WriteLine($"Opening {fileName}");
+            Console.WriteLine($"Opening {diskName}");
 
-            fileDescriptor = Syscall.open(fileName, OpenFlags.O_RDWR);
-
-            if (fileDescriptor < 0)
+            try
             {
-                Stdlib.perror($"Error opening file {fileName}.");
-                return;
+                disk.Open();
+            }
+            catch (Exception E)
+            {
+                Console.WriteLine($"Unable to open {diskName}. : {E}");
             }
 
             long readSize;
             long writeSize;
+            long position = 0;
 
             do
             {
-                unsafe
-                {
-                    fixed (byte* b = buffer)
-                    {
+                disk.Seek(position);
 
-                        readSize = Syscall.read(fileDescriptor, (IntPtr)b, bufferSize);
+                readSize = disk.Read(buffer, bufferSize);
 
-                        InvertBuffer(buffer, readSize);
+                InvertBuffer(buffer, readSize);
 
-                        Syscall.lseek(fileDescriptor, readSize * -1, SeekFlags.SEEK_CUR);
+                disk.Seek(position);
 
-                        writeSize = Syscall.write(fileDescriptor, (IntPtr)b, (ulong)readSize);
+                disk.Write(buffer, (ulong)readSize);
 
-                        Syscall.lseek(fileDescriptor, readSize + -1, SeekFlags.SEEK_CUR);
+                disk.Seek(position);
 
-                        readSize = Syscall.read(fileDescriptor, (IntPtr)b, (ulong)readSize);
+                disk.Read(buffer, (ulong)readSize);
 
-                        InvertBuffer(buffer, readSize);
+                InvertBuffer(buffer, readSize);
 
-                        Syscall.lseek(fileDescriptor, readSize + -1, SeekFlags.SEEK_CUR);
+                disk.Seek(position);
 
-                        writeSize = Syscall.write(fileDescriptor, (IntPtr)b, (ulong)readSize);
-                    }
+                disk.Write(buffer, (ulong)readSize);
 
-                }
+                disk.Flush();
 
+                position += readSize;
             } while (readSize > 0);
 
-            if (Syscall.fsync(fileDescriptor) < 0)
-            {
-                Stdlib.perror("Error syncing file buffers.");
-                return;
-            }
-
-
-            if (Syscall.close(fileDescriptor) < 0)
-            {
-                Stdlib.perror($"Error closing file.");
-                return;
-            }
+            disk.Close();
 
         }
 
