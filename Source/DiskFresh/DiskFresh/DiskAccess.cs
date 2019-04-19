@@ -10,7 +10,7 @@ namespace DiskFresh
     class DiskAccess 
     {
         private int _fileDescriptor;
-        private string _fileName;
+        private readonly string _fileName;
         private bool _isOpen;
 
         public DiskAccess(string fileName)
@@ -46,20 +46,17 @@ namespace DiskFresh
 
         public void Close()
         {
-            int result;
+            if (!_isOpen) return;
 
-            if (_isOpen)
+            int result = Syscall.close(_fileDescriptor);
+
+            if (result < 0)
             {
-                result = Syscall.close(_fileDescriptor);
-
-                if (result < 0)
-                {
-                    UnixMarshal.ThrowExceptionForLastError();
-                }
-                else
-                {
-                    _isOpen = false;
-                }
+                UnixMarshal.ThrowExceptionForLastError();
+            }
+            else
+            {
+                _isOpen = false;
             }
         }
 
@@ -106,9 +103,7 @@ namespace DiskFresh
 
         public long Seek(long offset)
         {
-            long resultingOffset;
-
-            resultingOffset = Syscall.lseek(_fileDescriptor, offset, SeekFlags.SEEK_SET);
+            long resultingOffset = Syscall.lseek(_fileDescriptor, offset, SeekFlags.SEEK_SET);
 
             if (resultingOffset < 0)
             {
@@ -120,9 +115,7 @@ namespace DiskFresh
 
         public void Flush()
         {
-            int result;
-
-            result = Syscall.fsync(_fileDescriptor);
+            int result = Syscall.fsync(_fileDescriptor);
 
             if (result < 0)
             {

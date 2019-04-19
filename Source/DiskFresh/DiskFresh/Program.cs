@@ -5,9 +5,9 @@ using Mono.Unix.Native;
 
 namespace DiskFresh
 {
-    class Program
+    internal class Program
     {
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             string diskName;
 
@@ -23,9 +23,9 @@ namespace DiskFresh
 
             var disk = new DiskAccess(diskName);
 
-            ulong blockSize = 512; // this will normally be 512 in Linux (maybe allow setting it differently later?)
-            ulong clusterSize = 8; // number of blocks to read/write (maybe allow settings via command line?)
-            ulong bufferSize = clusterSize * blockSize;
+            const ulong blockSize = 512; // this will normally be 512 in Linux (maybe allow setting it differently later?)
+            const ulong clusterSize = 8; // number of blocks to read/write (maybe allow settings via command line?)
+            const ulong bufferSize = clusterSize * blockSize;
 
             var buffer = new byte[bufferSize];
 
@@ -41,7 +41,6 @@ namespace DiskFresh
             }
 
             long readSize;
-            long writeSize;
             long position = 0;
 
             do
@@ -79,7 +78,7 @@ namespace DiskFresh
         {
             long length = size >= buffer.Length ? buffer.Length : size;
 
-            for (int i = 0; i < length; i++)
+            for (var i = 0; i < length; i++)
             {
                 buffer[i] = (byte)~buffer[i];
             }
