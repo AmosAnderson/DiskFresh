@@ -24,13 +24,13 @@ namespace DiskFresh
             var disk = new DiskAccess(diskName);
 
             const ulong blockSize = 512; // this will normally be 512 in Linux (maybe allow setting it differently later?)
-            const ulong clusterSize = 8; // number of blocks to read/write (maybe allow settings via command line?)
+            const ulong clusterSize = 1280; // number of blocks to read/write (maybe allow settings via command line?)
             const ulong bufferSize = clusterSize * blockSize;
 
             var buffer = new byte[bufferSize];
 
             Console.WriteLine($"Opening {diskName}");
-
+            
             try
             {
                 disk.Open();
@@ -42,6 +42,8 @@ namespace DiskFresh
 
             long readSize;
             long position = 0;
+
+            Console.WriteLine("Doing work. Press 'Q' to exit.");
 
             do
             {
@@ -68,6 +70,15 @@ namespace DiskFresh
                 disk.Flush();
 
                 position += readSize;
+
+                Console.Write($"\rPosition {position / 1024 / 1024}MB");
+
+                if (Console.KeyAvailable)
+                {
+                    var key = Console.ReadKey();
+                    if (key.Key == ConsoleKey.Q)
+                        break;
+                }
             } while (readSize > 0);
 
             disk.Close();
