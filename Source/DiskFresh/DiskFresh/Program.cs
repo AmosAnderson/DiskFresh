@@ -35,9 +35,9 @@ namespace DiskFresh
             {
                 disk.Open();
             }
-            catch (Exception E)
+            catch (Exception ex)
             {
-                Console.WriteLine($"Unable to open {diskName}. : {E}");
+                Console.WriteLine($"Unable to open {diskName}. : {ex}");
             }
 
             long readSize;

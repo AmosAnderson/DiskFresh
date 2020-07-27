@@ -29,7 +29,7 @@ namespace DiskFresh
         public void Open()
         {
             if (_isOpen)
-                throw new Exception("Cannot open file, it is already open.");
+                return;
 
             int fd = Syscall.open(_fileName, OpenFlags.O_RDWR);
 
@@ -46,7 +46,8 @@ namespace DiskFresh
 
         public void Close()
         {
-            if (!_isOpen) return;
+            if (!_isOpen) 
+                return;
 
             int result = Syscall.close(_fileDescriptor);
 
